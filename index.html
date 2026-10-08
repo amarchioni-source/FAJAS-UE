@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block contenido %}
+<div class="tarjeta">
+  <h2>Generar anexos</h2>
+  {% if error %}<div class="aviso error">{{ error }}</div>{% endif %}
+  <form id="formulario" action="{{ url_for('generar') }}" method="post" enctype="multipart/form-data">
+    <label class="zona" id="zona">
+      <strong>Seleccione o arrastre las bajadas (.xlsx)</strong>
+      Hoja «ag-grid» con las columnas Fecha, Faja1 y Faja2. Se admiten varios archivos.
+      <input type="file" name="bajadas" id="archivos" accept=".xlsx" multiple required>
+    </label>
+    <ul id="lista"></ul>
+
+    <fieldset>
+      <legend>Qué generar</legend>
+      <label class="opcion"><input type="radio" name="modo" value="todos" checked>
+        Un anexo por cada día con producción UE de la bajada</label>
+      <label class="opcion"><input type="radio" name="modo" value="ultimo">
+        Solo el último día con producción UE</label>
+    </fieldset>
+
+    <div class="acciones">
+      <button type="submit" id="boton">Generar anexos</button>
+    </div>
+    <p class="pie">Se incluyen las series FE y FF. Las fajas FC (USA/Kosher) se excluyen.
+      Los archivos subidos no se conservan; los anexos generados se eliminan del servidor a las pocas horas.</p>
+  </form>
+</div>
+<script>
+  const input = document.getElementById('archivos');
+  const lista = document.getElementById('lista');
+  const zona = document.getElementById('zona');
+  const form = document.getElementById('formulario');
+  const boton = document.getElementById('boton');
+  function mostrar(){
+    lista.innerHTML = '';
+    for (const f of input.files){
+      const li = document.createElement('li');
+      li.textContent = f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' MB)';
+      lista.appendChild(li);
+    }
+  }
+  input.addEventListener('change', mostrar);
+  ['dragenter','dragover'].forEach(e => zona.addEventListener(e, ev => {ev.preventDefault(); zona.classList.add('sobre');}));
+  ['dragleave','drop'].forEach(e => zona.addEventListener(e, ev => {ev.preventDefault(); zona.classList.remove('sobre');}));
+  zona.addEventListener('drop', ev => { input.files = ev.dataTransfer.files; mostrar(); });
+  form.addEventListener('submit', () => { boton.disabled = true; boton.textContent = 'Generando… puede demorar unos segundos'; });
+</script>
+{% endblock %}

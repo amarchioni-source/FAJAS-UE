@@ -10,12 +10,14 @@ import tempfile
 import time
 import uuid
 
+from werkzeug.exceptions import HTTPException
 from flask import (Flask, Response, abort, redirect, render_template, request,
                    send_from_directory, url_for)
 
 import service
 
-app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, template_folder=BASE_DIR, static_folder=None)
 app.config["MAX_CONTENT_LENGTH"] = int(os.environ.get("MAX_UPLOAD_MB", "60")) * 1024 * 1024
 
 JOBS_DIR = os.environ.get("JOBS_DIR", os.path.join(tempfile.gettempdir(), "anexos_jobs"))
@@ -33,13 +35,17 @@ os.makedirs(JOBS_DIR, exist_ok=True)
 # --------------------------------------------------------------------------- #
 # Acceso (opcional): si APP_PASSWORD está definida, se pide usuario y contraseña
 # --------------------------------------------------------------------------- #
+def _iguales(a, b):
+    """Comparación en tiempo constante; admite caracteres no ASCII (ñ, tildes)."""
+    return hmac.compare_digest((a or "").encode("utf-8"), (b or "").encode("utf-8"))
+
+
 @app.before_request
 def _requiere_clave():
     if not APP_PASSWORD or request.path == "/health":
         return None
     auth = request.authorization
-    if auth and hmac.compare_digest(auth.username or "", APP_USER) \
-            and hmac.compare_digest(auth.password or "", APP_PASSWORD):
+    if auth and _iguales(auth.username, APP_USER) and _iguales(auth.password, APP_PASSWORD):
         return None
     return Response("Acceso restringido.", 401,
                     {"WWW-Authenticate": 'Basic realm="Anexos V Fajas UE"'})
@@ -143,6 +149,71 @@ def descargar(job_id, tipo, nombre):
     if tipo not in carpetas:
         abort(404)
     return send_from_directory(os.path.join(job_dir, carpetas[tipo]), nombre, as_attachment=True)
+
+
+@app.errorhandler(Exception)
+def error_no_controlado(e):
+    if isinstance(e, HTTPException):
+        return e
+    codigo = uuid.uuid4().hex[:8]
+    app.logger.exception("Error no controlado [%s] en %s %s", codigo, request.method, request.path)
+    cuerpo = (
+        "<!doctype html><meta charset='utf-8'><title>Error</title>"
+        "<body style='font-family:system-ui,sans-serif;max-width:640px;margin:48px auto;padding:0 16px'>"
+        "<h1>Ocurrió un error</h1>"
+        f"<p>Código de error: <b>{codigo}</b>. Está registrado en los logs del servidor con el detalle.</p>"
+        "<p>Para revisar la instalación, abra <a href='/diagnostico'>/diagnostico</a>.</p>"
+        "<p><a href='/'>Volver al inicio</a></p></body>"
+    )
+    return Response(cuerpo, 500, mimetype="text/html")
+
+
+@app.get("/diagnostico")
+def diagnostico():
+    """Revisa que la instalación esté completa. ?prueba_pdf=1 prueba la conversión a PDF."""
+    import platform
+    import shutil as sh
+
+    import flask
+    import openpyxl
+    import pandas
+
+    base = os.path.dirname(os.path.abspath(__file__))
+    archivos = ["base.html", "index.html", "resultado.html",
+                "generador_anexos.py", "service.py"]
+    info = {
+        "archivos": {a: os.path.exists(os.path.join(base, a)) for a in archivos},
+        "plantilla_xlsx": os.path.exists(service.PLANTILLA),
+        "libreoffice": sh.which("soffice") or sh.which("libreoffice"),
+        "acceso_con_clave": bool(APP_PASSWORD),
+        "versiones": {"python": platform.python_version(), "flask": flask.__version__,
+                      "pandas": pandas.__version__, "openpyxl": openpyxl.__version__},
+    }
+    try:
+        prueba = os.path.join(JOBS_DIR, ".prueba")
+        with open(prueba, "w") as fh:
+            fh.write("ok")
+        os.remove(prueba)
+        info["carpeta_temporal_escribible"] = True
+    except OSError as exc:
+        info["carpeta_temporal_escribible"] = f"no: {exc}"
+
+    if request.args.get("prueba_pdf"):
+        t0 = time.time()
+        carpeta = tempfile.mkdtemp(prefix="diag_")
+        try:
+            copia = os.path.join(carpeta, "plantilla.xlsx")
+            shutil.copy(service.PLANTILLA, copia)
+            error = service._convertir_pdf([copia], carpeta)
+            pdf = os.path.join(carpeta, "plantilla.pdf")
+            info["prueba_pdf"] = {
+                "ok": error is None and os.path.exists(pdf),
+                "error": error,
+                "segundos": round(time.time() - t0, 1),
+            }
+        finally:
+            shutil.rmtree(carpeta, ignore_errors=True)
+    return info
 
 
 @app.errorhandler(413)

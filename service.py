@@ -25,7 +25,7 @@ from generador_anexos import MESES, build_day, day_tramos, parse_faja
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PLANTILLA = os.environ.get(
-    "PLANTILLA", os.path.join(BASE_DIR, "plantilla", "plantilla_Fajas_UE_fixed.xlsx")
+    "PLANTILLA", os.path.join(BASE_DIR, "plantilla_Fajas_UE_fixed.xlsx")
 )
 
 # Umbrales de control (configurables por variable de entorno)

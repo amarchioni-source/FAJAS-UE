@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block titulo %}Resultado · Anexos V Fajas UE{% endblock %}
+{% block contenido %}
+<div class="tarjeta">
+  <h2>{{ meta.dias|length }} anexo{{ '' if meta.dias|length == 1 else 's' }} generado{{ '' if meta.dias|length == 1 else 's' }}</h2>
+
+  {% for a in meta.avisos %}<div class="aviso alerta">{{ a }}</div>{% endfor %}
+  {% if con_alertas %}
+    <div class="aviso alerta">{{ con_alertas }} día{{ '' if con_alertas == 1 else 's' }} con puntos a confirmar antes de firmar (ver columna «Control»).</div>
+  {% else %}
+    <div class="aviso ok">Sin observaciones en los controles automáticos.</div>
+  {% endif %}
+
+  <div class="acciones">
+    <a class="boton" href="{{ url_for('descargar', job_id=job_id, tipo='raiz', nombre=meta.zip) }}">Descargar todo (ZIP)</a>
+    {% if meta.cronologico %}
+    <a class="boton sec" href="{{ url_for('descargar', job_id=job_id, tipo='raiz', nombre=meta.cronologico) }}">PDF cronológico</a>
+    {% endif %}
+    <a class="boton sec" href="{{ url_for('inicio') }}">Nueva carga</a>
+  </div>
+</div>
+
+<div class="tarjeta tabla-scroll">
+  <table>
+    <thead>
+      <tr><th>Fecha</th><th>Serie</th><th>Tramos utilizados</th><th>Utilizadas</th><th>Control</th><th>Archivos</th></tr>
+    </thead>
+    <tbody>
+    {% for d in meta.dias %}
+      <tr>
+        <td>{{ d.fecha_fmt }}</td>
+        <td>{{ d.tramos|map(attribute='serie')|unique|join(', ') }}</td>
+        <td class="num">
+          {% for t in d.tramos %}
+            {% if t.du == t.hu %}{{ t.du }}{% else %}{{ t.du }}–{{ t.hu }}{% endif %}{% if not loop.last %}<br>{% endif %}
+          {% endfor %}
+        </td>
+        <td class="num">{{ d.util }}</td>
+        <td>
+          {% if d.alertas %}
+            <span class="etiqueta alerta">Confirmar</span>
+            <ul class="alertas">{% for a in d.alertas %}<li>{{ a }}</li>{% endfor %}</ul>
+          {% else %}
+            <span class="etiqueta ok">OK</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if d.pdf %}<a class="boton chico" href="{{ url_for('descargar', job_id=job_id, tipo='pdf', nombre=d.pdf) }}">PDF</a>{% endif %}
+          <a class="boton chico sec" href="{{ url_for('descargar', job_id=job_id, tipo='xlsx', nombre=d.xlsx) }}">Excel</a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="pie">El pie «SERIE ___ Nº ___» y las firmas se completan a mano al imprimir: los números de precinto no están en la bajada.
+    Estos enlaces permanecen disponibles unas horas.</p>
+</div>
+{% endblock %}

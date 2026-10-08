@@ -17,15 +17,16 @@ El pie «SERIE ___ Nº ___» y las firmas quedan en blanco para completar a mano
 
 ## Estructura
 
+Todos los archivos están en una sola carpeta, sin subcarpetas: se pueden subir juntos a GitHub.
+
 ```
-app.py                  Aplicación Flask (rutas, acceso, descargas)
-service.py              Lectura de bajadas, controles, generación, PDF y ZIP
-generador_anexos.py     Reglas de negocio originales (day_tramos / build_day), sin cambios
-plantilla/              plantilla_Fajas_UE_fixed.xlsx (con el logo SENASA corregido)
-templates/, static/     Interfaz
-Dockerfile              Imagen con LibreOffice (necesario para el PDF)
-render.yaml             Configuración de despliegue en Render
-fonts.conf              Fuentes de reemplazo, para que el PDF salga igual que hasta ahora
+app.py                              Aplicación Flask (rutas, acceso, descargas)
+service.py                          Lectura de bajadas, controles, generación, PDF y ZIP
+generador_anexos.py                 Reglas de negocio originales (day_tramos / build_day), sin cambios
+plantilla_Fajas_UE_fixed.xlsx       Plantilla oficial con el logo SENASA corregido
+base.html, index.html, resultado.html   Interfaz
+Dockerfile, render.yaml, fonts.conf     Despliegue (LibreOffice, necesario para el PDF)
+requirements.txt                    Dependencias de Python
 ```
 
 ## Publicar: GitHub y Render
@@ -68,6 +69,15 @@ Cada `git push` a `main` vuelve a desplegar automáticamente.
 | `MAX_UPLOAD_MB` | `60` | Tamaño máximo de la carga. |
 | `JOB_TTL_HORAS` | `6` | Horas que se conservan los resultados antes de borrarse. |
 
+## Si aparece «Internal Server Error»
+
+1. Abrir `https://<nombre>.onrender.com/diagnostico`. Indica si falta alguna carpeta o archivo
+   (por ejemplo `index.html` si la subida a GitHub quedó incompleta) y si LibreOffice está instalado.
+   Agregando `?prueba_pdf=1` prueba además la conversión a PDF y su duración.
+2. En Render, entrar al servicio y abrir **Logs**: cada error queda registrado con un código y el detalle completo
+   (líneas que empiezan con `Traceback`).
+3. Verificar en GitHub que estén **todos** los archivos del listado de arriba (son 12; `.gitignore` y `.dockerignore` son opcionales). Atención a `base.html`, `index.html`, `resultado.html` y a la plantilla `.xlsx`.
+
 ## Consideraciones del plan gratuito de Render
 
 - El servicio se suspende tras un período sin uso: el primer acceso puede demorar cerca de un minuto.
@@ -88,5 +98,5 @@ Para el PDF se necesita LibreOffice instalado (`soffice` en el PATH). Sin él, l
 ## Mantenimiento
 
 - Cambiar una regla de cálculo: editar `generador_anexos.py` y hacer `git push`.
-- Cambiar el formato: reemplazar `plantilla/plantilla_Fajas_UE_fixed.xlsx`.
+- Cambiar el formato: reemplazar `plantilla_Fajas_UE_fixed.xlsx`.
 - Ajustar la sensibilidad de los controles: modificar las variables de entorno en Render.
