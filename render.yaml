@@ -2,7 +2,7 @@ services:
   - type: web
     name: fajas-ue
     runtime: docker
-    plan: free            # si LibreOffice se queda sin memoria, pasar a "starter"
+    plan: free
     healthCheckPath: /health
     autoDeploy: true
     envVars:

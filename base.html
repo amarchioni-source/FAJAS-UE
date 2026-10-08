@@ -3,69 +3,76 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block titulo %}Anexos V · Fajas UE{% endblock %}</title>
+  <meta name="color-scheme" content="light">
+  <title>{% block titulo %}Generación de Fajas UE{% endblock %}</title>
   <style>
-:root{
-  --fondo:#f4f6f8; --tarjeta:#ffffff; --texto:#1c2430; --suave:#5b6675;
-  --borde:#dbe1e8; --primario:#1f4e79; --primario-osc:#173b5c;
-  --ok:#1e7a4c; --ok-fondo:#e6f4ec; --alerta:#9a5b00; --alerta-fondo:#fff4e0;
-  --error:#a32a2a; --error-fondo:#fdeaea;
-}
-@media (prefers-color-scheme: dark){
-  :root{
-    --fondo:#12171d; --tarjeta:#1b222b; --texto:#e8edf2; --suave:#9aa6b4;
-    --borde:#2d3743; --primario:#5aa0dc; --primario-osc:#7bb5e8;
-    --ok:#6fd0a0; --ok-fondo:#17342a; --alerta:#f0b45a; --alerta-fondo:#3a2c12;
-    --error:#f08a8a; --error-fondo:#3b1c1c;
-  }
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--fondo);color:var(--texto);
-  font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-header{background:var(--primario);color:#fff;padding:18px 24px}
-header h1{margin:0;font-size:1.25rem;font-weight:600}
-header p{margin:2px 0 0;opacity:.85;font-size:.9rem}
-main{max-width:920px;margin:24px auto;padding:0 16px 48px}
-.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:10px;
-  padding:22px;margin-bottom:18px}
-h2{margin:0 0 12px;font-size:1.1rem}
-.aviso{padding:12px 14px;border-radius:8px;margin-bottom:14px;font-size:.95rem}
-.aviso.error{background:var(--error-fondo);color:var(--error)}
-.aviso.alerta{background:var(--alerta-fondo);color:var(--alerta)}
-.aviso.ok{background:var(--ok-fondo);color:var(--ok)}
-.zona{display:block;border:2px dashed var(--borde);border-radius:10px;padding:30px 16px;
-  text-align:center;cursor:pointer;color:var(--suave)}
-.zona:hover,.zona.sobre{border-color:var(--primario);color:var(--primario)}
-.zona input{display:none}
-.zona strong{display:block;color:var(--texto);margin-bottom:4px}
-#lista{margin:12px 0 0;padding:0;list-style:none;font-size:.92rem;color:var(--suave)}
-fieldset{border:0;padding:0;margin:18px 0 0}
-legend{font-weight:600;margin-bottom:6px}
-label.opcion{display:block;margin:4px 0;cursor:pointer}
-button,.boton{display:inline-block;background:var(--primario);color:#fff;border:0;
-  border-radius:8px;padding:11px 20px;font-size:1rem;font-weight:600;cursor:pointer;
-  text-decoration:none}
-button:hover,.boton:hover{background:var(--primario-osc)}
-button[disabled]{opacity:.6;cursor:wait}
-.boton.sec{background:transparent;color:var(--primario);border:1px solid var(--primario)}
-.boton.chico{padding:6px 12px;font-size:.88rem}
-.acciones{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
-table{width:100%;border-collapse:collapse;font-size:.93rem}
-th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--borde);vertical-align:top}
-th{color:var(--suave);font-weight:600;font-size:.82rem;text-transform:uppercase;letter-spacing:.03em}
-td.num{font-variant-numeric:tabular-nums}
-.etiqueta{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.78rem;font-weight:600}
-.etiqueta.ok{background:var(--ok-fondo);color:var(--ok)}
-.etiqueta.alerta{background:var(--alerta-fondo);color:var(--alerta)}
-ul.alertas{margin:6px 0 0;padding-left:18px;color:var(--alerta);font-size:.88rem}
-.pie{color:var(--suave);font-size:.85rem;margin-top:8px}
-.tabla-scroll{overflow-x:auto}
-</style>
+    :root{
+      --texto:#1b2430; --suave:#667085; --borde:#e4e8ee; --fondo-suave:#f6f8fb;
+      --primario:#1f5fbf; --primario-osc:#174a96; --primario-claro:#eaf1fc;
+      --ok:#17824f; --ok-fondo:#e8f6ef; --alerta:#a8620a; --alerta-fondo:#fff4e1;
+      --error:#b3321f; --error-fondo:#fdecea;
+      --sombra:0 1px 2px rgba(16,24,40,.05), 0 6px 20px rgba(16,24,40,.05);
+    }
+    *{box-sizing:border-box}
+    html{background:#fff}
+    body{margin:0;background:#fff;color:var(--texto);
+      font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+    .franja{height:5px;background:linear-gradient(90deg,#8e44ad 0%,#2f6fd0 50%,#1fa971 100%)}
+    header{border-bottom:1px solid var(--borde);background:#fff}
+    .encabezado{max-width:980px;margin:0 auto;padding:18px 20px;display:flex;align-items:center;gap:14px}
+    .marca{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;flex:none;
+      background:linear-gradient(135deg,#8e44ad,#2f6fd0 55%,#1fa971);color:#fff}
+    .marca svg{width:26px;height:26px}
+    header h1{margin:0;font-size:1.45rem;line-height:1.2;letter-spacing:-.01em}
+    header p{margin:2px 0 0;color:var(--suave);font-size:.92rem}
+    main{max-width:980px;margin:0 auto;padding:28px 20px 56px}
+    .tarjeta{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:26px;
+      box-shadow:var(--sombra);margin-bottom:20px}
+    h2{margin:0 0 6px;font-size:1.25rem;letter-spacing:-.01em}
+    .bajada{margin:0 0 20px;color:var(--suave)}
+    svg.i{width:1.1em;height:1.1em;fill:none;stroke:currentColor;stroke-width:2;
+      stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+    /* avisos */
+    .aviso{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:10px;
+      margin:0 0 14px;font-size:.95rem}
+    .aviso svg{margin-top:3px}
+    .aviso.error{background:var(--error-fondo);color:var(--error)}
+    .aviso.alerta{background:var(--alerta-fondo);color:var(--alerta)}
+    .aviso.ok{background:var(--ok-fondo);color:var(--ok)}
+
+    /* botones */
+    .boton{display:inline-flex;align-items:center;justify-content:center;gap:9px;
+      background:var(--primario);color:#fff;border:1px solid var(--primario);border-radius:10px;
+      padding:12px 22px;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;
+      transition:background .15s, box-shadow .15s}
+    .boton:hover{background:var(--primario-osc);box-shadow:0 4px 14px rgba(31,95,191,.25)}
+    .boton[disabled]{opacity:.65;cursor:wait}
+    .boton.sec{background:#fff;color:var(--primario)}
+    .boton.sec:hover{background:var(--primario-claro);box-shadow:none}
+    .boton.grande{padding:15px 28px;font-size:1.05rem}
+    .boton.excel{background:var(--ok);border-color:var(--ok)}
+    .boton.excel:hover{background:#126a40;box-shadow:0 4px 14px rgba(23,130,79,.28)}
+    .acciones{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+    .pie{color:var(--suave);font-size:.86rem;margin:16px 0 0}
+    {% block estilos %}{% endblock %}
+  </style>
 </head>
 <body>
+  <div class="franja"></div>
   <header>
-    <h1>Anexos V · Fajas UE</h1>
-    <p>Declaración Jurada de fajas de seguridad para mercado UE (SENASA)</p>
+    <div class="encabezado">
+      <div class="marca" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <path d="M4 5v14M8 5v14M12 5v14M16 5v14M20 5v14" opacity=".95"/>
+          <path d="M6 5v14M14 5v14M18 5v14" stroke-width="1.2" opacity=".6"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Generación de Fajas UE</h1>
+        <p>Declaración Jurada de fajas de seguridad para mercado UE · Anexo V SENASA</p>
+      </div>
+    </div>
   </header>
   <main>{% block contenido %}{% endblock %}</main>
 </body>

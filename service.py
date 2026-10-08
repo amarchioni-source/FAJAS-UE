@@ -4,22 +4,17 @@ Lógica de negocio de la app de Anexos V (Fajas UE).
 
 Reutiliza sin cambios las reglas de generador_anexos.py (day_tramos / build_day)
 y agrega: lectura de varias bajadas, detección de archivos duplicados, alertas de
-control, conversión a PDF y empaquetado.
+control y empaquetado.
 """
 
 import hashlib
 import json
 import os
 import re
-import shutil
-import subprocess
-import tempfile
-import threading
 import zipfile
 
 import openpyxl
 import pandas as pd
-import pypdf
 
 from generador_anexos import MESES, build_day, day_tramos, parse_faja
 
@@ -34,9 +29,6 @@ VOLUMEN_BAJO = int(os.environ.get("VOLUMEN_BAJO", "600"))    # fajas/día
 TRAMO_CHICO = int(os.environ.get("TRAMO_CHICO", "5"))        # fajas en un tramo "suelto"
 DISTANCIA_LEJANA = int(os.environ.get("DISTANCIA_LEJANA", "10000"))
 MAX_DIAS = int(os.environ.get("MAX_DIAS", "62"))
-SOFFICE_TIMEOUT = int(os.environ.get("SOFFICE_TIMEOUT", "240"))
-
-_SOFFICE_LOCK = threading.Lock()  # una conversión a la vez (cuida la memoria)
 
 
 class BajadaError(Exception):
@@ -168,75 +160,31 @@ def nombre_xlsx(fecha):
     return f"Anexo_V_Fajas_UE_{dd}-{mm}-{yy}.xlsx"
 
 
-def _convertir_pdf(xlsx_paths, outdir):
-    soffice = shutil.which("soffice") or shutil.which("libreoffice")
-    if not soffice:
-        return "LibreOffice no está disponible en el servidor."
-    perfil = tempfile.mkdtemp(prefix="lo_perfil_")
-    try:
-        with _SOFFICE_LOCK:
-            subprocess.run(
-                [soffice, f"-env:UserInstallation=file://{perfil}", "--headless", "--calc",
-                 "--convert-to", "pdf", "--outdir", outdir] + xlsx_paths,
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                timeout=SOFFICE_TIMEOUT, check=False,
-            )
-    except subprocess.TimeoutExpired:
-        return "La conversión a PDF superó el tiempo máximo."
-    finally:
-        shutil.rmtree(perfil, ignore_errors=True)
-    return None
-
-
 def generar(df, dias, job_dir):
-    """Genera xlsx + PDFs + ZIP dentro de job_dir. Devuelve (dias, avisos)."""
+    """Genera un Excel por día (y un ZIP si hay más de uno) dentro de job_dir."""
     xlsx_dir = os.path.join(job_dir, "xlsx")
-    pdf_dir = os.path.join(job_dir, "pdf")
     os.makedirs(xlsx_dir, exist_ok=True)
-    os.makedirs(pdf_dir, exist_ok=True)
-    avisos = []
 
-    rutas = []
     for dia in dias:
         ruta = os.path.join(xlsx_dir, nombre_xlsx(dia["fecha"]))
         build_day(PLANTILLA, dia["fecha"], dia["tramos"], dia["util"], ruta)
         dia["xlsx"] = os.path.basename(ruta)
-        rutas.append(ruta)
 
-    error_pdf = _convertir_pdf(rutas, pdf_dir)
-    if error_pdf:
-        avisos.append(f"No se generaron los PDF: {error_pdf} Los Excel están disponibles.")
+    zip_nombre = None
+    if len(dias) > 1:
+        zip_nombre = "Anexos_V_Fajas_UE.zip"
+        with zipfile.ZipFile(os.path.join(job_dir, zip_nombre), "w", zipfile.ZIP_DEFLATED) as z:
+            for dia in dias:
+                yy, mm, dd = dia["fecha"].split("-")
+                z.write(os.path.join(xlsx_dir, dia["xlsx"]),
+                        f"{MESES.get(mm, mm)}/Anexo_V_Fajas_UE_{yy}-{mm}-{dd}.xlsx")
 
-    escritor = pypdf.PdfWriter()
-    paginas = 0
-    for dia in dias:
-        pdf = os.path.join(pdf_dir, dia["xlsx"].replace(".xlsx", ".pdf"))
-        if os.path.exists(pdf):
-            dia["pdf"] = os.path.basename(pdf)
-            for pagina in pypdf.PdfReader(pdf).pages:
-                escritor.add_page(pagina)
-                paginas += 1
-        else:
-            dia["pdf"] = None
-    cronologico = None
-    if paginas:
-        cronologico = "Anexos_V_Fajas_UE_cronologico.pdf"
-        with open(os.path.join(job_dir, cronologico), "wb") as f:
-            escritor.write(f)
-    if paginas and paginas < len(dias):
-        avisos.append("Algunos días no tienen PDF: falló su conversión.")
-
-    zip_nombre = "Anexos_V_Fajas_UE.zip"
-    with zipfile.ZipFile(os.path.join(job_dir, zip_nombre), "w", zipfile.ZIP_DEFLATED) as z:
-        if cronologico:
-            z.write(os.path.join(job_dir, cronologico), cronologico)
-        for dia in dias:
-            yy, mm, dd = dia["fecha"].split("-")
-            z.write(os.path.join(xlsx_dir, dia["xlsx"]),
-                    f"editables/{MESES.get(mm, mm)}/Anexo_V_Fajas_UE_{yy}-{mm}-{dd}.xlsx")
-
-    meta = {"dias": _serializable(dias), "avisos": avisos,
-            "cronologico": cronologico, "zip": zip_nombre}
+    meta = {
+        "dias": _serializable(dias),
+        "avisos": [],
+        "zip": zip_nombre,
+        "total_util": sum(d["util"] for d in dias),
+    }
     with open(os.path.join(job_dir, "meta.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False)
     return meta
@@ -253,7 +201,6 @@ def _serializable(dias):
             ],
             "alertas": d["alertas"],
             "xlsx": d["xlsx"],
-            "pdf": d.get("pdf"),
         }
         for d in dias
     ]

@@ -1,58 +1,119 @@
 {% extends "base.html" %}
-{% block titulo %}Resultado · Anexos V Fajas UE{% endblock %}
+{% block titulo %}Anexos generados · Generación de Fajas UE{% endblock %}
+{% block estilos %}
+    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+    @media(max-width:700px){.kpis{grid-template-columns:1fr}}
+    .kpi{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--borde);
+      border-radius:16px;padding:18px 20px;box-shadow:var(--sombra)}
+    .kpi .ico{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;flex:none;
+      background:var(--primario-claro);color:var(--primario)}
+    .kpi .ico svg{width:24px;height:24px}
+    .kpi.ok .ico{background:var(--ok-fondo);color:var(--ok)}
+    .kpi.alerta .ico{background:var(--alerta-fondo);color:var(--alerta)}
+    .kpi b{display:block;font-size:1.65rem;line-height:1.1;letter-spacing:-.02em}
+    .kpi span{color:var(--suave);font-size:.88rem}
+    .barra{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:22px}
+    .dias{display:flex;flex-direction:column;gap:14px}
+    .dia{display:grid;grid-template-columns:84px 1fr auto;gap:18px;align-items:center;background:#fff;
+      border:1px solid var(--borde);border-radius:16px;padding:18px 20px;box-shadow:var(--sombra)}
+    .dia.con-alerta{border-color:#f0cf93}
+    @media(max-width:700px){.dia{grid-template-columns:70px 1fr}.dia .accion{grid-column:1 / -1}.dia .accion .boton{width:100%}}
+    .fecha{text-align:center;border-radius:12px;background:var(--fondo-suave);border:1px solid var(--borde);
+      padding:8px 4px;line-height:1.1}
+    .fecha b{display:block;font-size:1.9rem;letter-spacing:-.02em}
+    .fecha span{display:block;font-size:.78rem;color:var(--suave);text-transform:uppercase;letter-spacing:.05em}
+    .detalle .linea{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+    .chip{display:inline-flex;align-items:center;gap:6px;background:var(--fondo-suave);border:1px solid var(--borde);
+      border-radius:99px;padding:3px 11px;font-size:.88rem;font-variant-numeric:tabular-nums}
+    .chip.serie{background:var(--primario-claro);border-color:#cfdef6;color:var(--primario);font-weight:600}
+    .util{color:var(--suave);font-size:.92rem}
+    .util b{color:var(--texto);font-size:1.05rem;font-variant-numeric:tabular-nums}
+    .etiqueta{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;
+      font-size:.8rem;font-weight:600}
+    .etiqueta.ok{background:var(--ok-fondo);color:var(--ok)}
+    .etiqueta.alerta{background:var(--alerta-fondo);color:var(--alerta)}
+    ul.alertas{margin:10px 0 0;padding:10px 12px 10px 30px;background:var(--alerta-fondo);color:var(--alerta);
+      border-radius:10px;font-size:.88rem}
+    ul.alertas li+li{margin-top:4px}
+{% endblock %}
 {% block contenido %}
-<div class="tarjeta">
-  <h2>{{ meta.dias|length }} anexo{{ '' if meta.dias|length == 1 else 's' }} generado{{ '' if meta.dias|length == 1 else 's' }}</h2>
+{% set meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'] %}
+{% set cant = meta.dias|length %}
 
-  {% for a in meta.avisos %}<div class="aviso alerta">{{ a }}</div>{% endfor %}
-  {% if con_alertas %}
-    <div class="aviso alerta">{{ con_alertas }} día{{ '' if con_alertas == 1 else 's' }} con puntos a confirmar antes de firmar (ver columna «Control»).</div>
-  {% else %}
-    <div class="aviso ok">Sin observaciones en los controles automáticos.</div>
-  {% endif %}
-
-  <div class="acciones">
-    <a class="boton" href="{{ url_for('descargar', job_id=job_id, tipo='raiz', nombre=meta.zip) }}">Descargar todo (ZIP)</a>
-    {% if meta.cronologico %}
-    <a class="boton sec" href="{{ url_for('descargar', job_id=job_id, tipo='raiz', nombre=meta.cronologico) }}">PDF cronológico</a>
-    {% endif %}
-    <a class="boton sec" href="{{ url_for('inicio') }}">Nueva carga</a>
+<div class="kpis">
+  <div class="kpi">
+    <div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg></div>
+    <div><b>{{ cant }}</b><span>{{ 'anexo generado' if cant == 1 else 'anexos generados' }}</span></div>
   </div>
+  <div class="kpi">
+    <div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M4 5v14M8 5v14M12 5v14M16 5v14M20 5v14"/></svg></div>
+    <div><b>{{ '{:,}'.format(meta.total_util).replace(',', '.') }}</b><span>fajas utilizadas en total</span></div>
+  </div>
+  {% if con_alertas %}
+  <div class="kpi alerta">
+    <div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+    <div><b>{{ con_alertas }}</b><span>{{ 'día a confirmar' if con_alertas == 1 else 'días a confirmar' }} antes de firmar</span></div>
+  </div>
+  {% else %}
+  <div class="kpi ok">
+    <div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+    <div><b>Todo OK</b><span>sin observaciones en los controles</span></div>
+  </div>
+  {% endif %}
 </div>
 
-<div class="tarjeta tabla-scroll">
-  <table>
-    <thead>
-      <tr><th>Fecha</th><th>Serie</th><th>Tramos utilizados</th><th>Utilizadas</th><th>Control</th><th>Archivos</th></tr>
-    </thead>
-    <tbody>
-    {% for d in meta.dias %}
-      <tr>
-        <td>{{ d.fecha_fmt }}</td>
-        <td>{{ d.tramos|map(attribute='serie')|unique|join(', ') }}</td>
-        <td class="num">
-          {% for t in d.tramos %}
-            {% if t.du == t.hu %}{{ t.du }}{% else %}{{ t.du }}–{{ t.hu }}{% endif %}{% if not loop.last %}<br>{% endif %}
-          {% endfor %}
-        </td>
-        <td class="num">{{ d.util }}</td>
-        <td>
-          {% if d.alertas %}
-            <span class="etiqueta alerta">Confirmar</span>
-            <ul class="alertas">{% for a in d.alertas %}<li>{{ a }}</li>{% endfor %}</ul>
-          {% else %}
-            <span class="etiqueta ok">OK</span>
-          {% endif %}
-        </td>
-        <td>
-          {% if d.pdf %}<a class="boton chico" href="{{ url_for('descargar', job_id=job_id, tipo='pdf', nombre=d.pdf) }}">PDF</a>{% endif %}
-          <a class="boton chico sec" href="{{ url_for('descargar', job_id=job_id, tipo='xlsx', nombre=d.xlsx) }}">Excel</a>
-        </td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  <p class="pie">El pie «SERIE ___ Nº ___» y las firmas se completan a mano al imprimir: los números de precinto no están en la bajada.
-    Estos enlaces permanecen disponibles unas horas.</p>
+{% for a in meta.avisos %}
+<div class="aviso alerta"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>{{ a }}</span></div>
+{% endfor %}
+
+<div class="barra">
+  {% if meta.zip %}
+    <a class="boton excel grande" href="{{ url_for('descargar', job_id=job_id, tipo='raiz', nombre=meta.zip) }}">
+      <svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Descargar los {{ cant }} Excel (ZIP)</a>
+  {% else %}
+    <a class="boton excel grande" href="{{ url_for('descargar', job_id=job_id, tipo='xlsx', nombre=meta.dias[0].xlsx) }}">
+      <svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Descargar Excel · {{ meta.dias[0].fecha_fmt }}</a>
+  {% endif %}
+  <a class="boton sec" href="{{ url_for('inicio') }}">Nueva carga</a>
 </div>
+
+<div class="dias">
+  {% for d in meta.dias %}
+  <div class="dia {{ 'con-alerta' if d.alertas }}">
+    <div class="fecha">
+      <b>{{ d.fecha[8:10] }}</b>
+      <span>{{ meses[d.fecha[5:7]|int - 1] }} {{ d.fecha[0:4] }}</span>
+    </div>
+    <div class="detalle">
+      <div class="linea">
+        <span class="chip serie">Serie {{ d.tramos|map(attribute='serie')|unique|join(', ') }}</span>
+        {% for t in d.tramos %}
+          <span class="chip">{% if t.du == t.hu %}{{ t.du }}{% else %}{{ t.du }} – {{ t.hu }}{% endif %}</span>
+        {% endfor %}
+      </div>
+      <div class="linea">
+        <span class="util"><b>{{ d.util }}</b> fajas utilizadas</span>
+        {% if d.alertas %}
+          <span class="etiqueta alerta"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Confirmar</span>
+        {% else %}
+          <span class="etiqueta ok"><svg class="i" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Control OK</span>
+        {% endif %}
+      </div>
+      {% if d.alertas %}
+      <ul class="alertas">{% for a in d.alertas %}<li>{{ a }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+    <div class="accion">
+      <a class="boton sec" href="{{ url_for('descargar', job_id=job_id, tipo='xlsx', nombre=d.xlsx) }}">
+        <svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Excel</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<p class="pie">El pie «SERIE ___ Nº ___» y las firmas se completan a mano al imprimir: los números de precinto no están en la bajada.
+  Estos enlaces permanecen disponibles unas horas.</p>
 {% endblock %}

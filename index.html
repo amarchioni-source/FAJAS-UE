@@ -1,29 +1,78 @@
 {% extends "base.html" %}
+{% block estilos %}
+    .pasos{list-style:none;display:flex;gap:10px;flex-wrap:wrap;margin:0 0 22px;padding:0}
+    .pasos li{display:flex;align-items:center;gap:9px;background:var(--fondo-suave);
+      border:1px solid var(--borde);border-radius:99px;padding:7px 14px 7px 8px;font-size:.9rem;color:var(--suave)}
+    .pasos b{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;
+      background:var(--primario);color:#fff;font-size:.8rem}
+    .zona{display:block;border:2px dashed #c5d3ea;background:#f7faff;border-radius:14px;
+      padding:38px 18px;text-align:center;cursor:pointer;color:var(--suave);transition:.15s}
+    .zona:hover,.zona.sobre{border-color:var(--primario);background:var(--primario-claro)}
+    .zona input{display:none}
+    .zona .icono{width:58px;height:58px;margin:0 auto 12px;border-radius:50%;display:grid;
+      place-items:center;background:#fff;color:var(--primario);box-shadow:var(--sombra)}
+    .zona .icono svg{width:28px;height:28px}
+    .zona strong{display:block;color:var(--texto);font-size:1.08rem;margin-bottom:4px}
+    #lista{margin:14px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+    #lista li{display:flex;align-items:center;gap:9px;background:var(--ok-fondo);color:var(--ok);
+      border-radius:8px;padding:8px 12px;font-size:.92rem}
+    h3{margin:26px 0 10px;font-size:1rem}
+    .opciones{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media(max-width:620px){.opciones{grid-template-columns:1fr}}
+    .opcion{position:relative;display:block;cursor:pointer}
+    .opcion input{position:absolute;opacity:0}
+    .opcion .contenido{display:block;border:2px solid var(--borde);border-radius:12px;padding:14px 16px;
+      height:100%;transition:.15s}
+    .opcion .contenido b{display:block;margin-bottom:2px}
+    .opcion .contenido span{color:var(--suave);font-size:.9rem}
+    .opcion:hover .contenido{border-color:#b9c9e4}
+    .opcion input:checked + .contenido{border-color:var(--primario);background:var(--primario-claro)}
+    .opcion input:focus-visible + .contenido{outline:3px solid #a9c6f3}
+    .enviar{margin-top:24px}
+{% endblock %}
 {% block contenido %}
 <div class="tarjeta">
-  <h2>Generar anexos</h2>
-  {% if error %}<div class="aviso error">{{ error }}</div>{% endif %}
+  <h2>Cargue la bajada y obtenga los anexos</h2>
+  <p class="bajada">Un anexo en Excel por cada día de producción UE, con el formato oficial listo para imprimir.</p>
+
+  <ol class="pasos">
+    <li><b>1</b> Suba la bajada</li>
+    <li><b>2</b> Revise los controles</li>
+    <li><b>3</b> Descargue el Excel</li>
+  </ol>
+
+  {% if error %}
+  <div class="aviso error">
+    <svg class="i" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span>{{ error }}</span>
+  </div>
+  {% endif %}
+
   <form id="formulario" action="{{ url_for('generar') }}" method="post" enctype="multipart/form-data">
     <label class="zona" id="zona">
-      <strong>Seleccione o arrastre las bajadas (.xlsx)</strong>
-      Hoja «ag-grid» con las columnas Fecha, Faja1 y Faja2. Se admiten varios archivos.
+      <span class="icono"><svg class="i" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></span>
+      <strong>Seleccione o arrastre las bajadas</strong>
+      Archivos .xlsx con la hoja «ag-grid». Puede cargar varios a la vez.
       <input type="file" name="bajadas" id="archivos" accept=".xlsx" multiple required>
     </label>
     <ul id="lista"></ul>
 
-    <fieldset>
-      <legend>Qué generar</legend>
+    <h3>¿Qué desea generar?</h3>
+    <div class="opciones">
       <label class="opcion"><input type="radio" name="modo" value="todos" checked>
-        Un anexo por cada día con producción UE de la bajada</label>
+        <span class="contenido"><b>Todos los días</b><span>Un anexo por cada día con producción UE de la bajada.</span></span></label>
       <label class="opcion"><input type="radio" name="modo" value="ultimo">
-        Solo el último día con producción UE</label>
-    </fieldset>
-
-    <div class="acciones">
-      <button type="submit" id="boton">Generar anexos</button>
+        <span class="contenido"><b>Solo el último día</b><span>Únicamente el día más reciente de la bajada.</span></span></label>
     </div>
-    <p class="pie">Se incluyen las series FE y FF. Las fajas FC (USA/Kosher) se excluyen.
-      Los archivos subidos no se conservan; los anexos generados se eliminan del servidor a las pocas horas.</p>
+
+    <div class="enviar">
+      <button type="submit" id="boton" class="boton grande">
+        <svg class="i" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        <span id="texto-boton">Generar anexos</span>
+      </button>
+    </div>
+    <p class="pie">Se incluyen las series FE y FF; las fajas FC (USA/Kosher) se excluyen.
+      Las bajadas subidas no se conservan y los anexos generados se eliminan del servidor a las pocas horas.</p>
   </form>
 </div>
 <script>
@@ -32,11 +81,13 @@
   const zona = document.getElementById('zona');
   const form = document.getElementById('formulario');
   const boton = document.getElementById('boton');
+  const tilde = '<svg class="i" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
   function mostrar(){
     lista.innerHTML = '';
     for (const f of input.files){
       const li = document.createElement('li');
-      li.textContent = f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' MB)';
+      li.innerHTML = tilde;
+      li.appendChild(document.createTextNode(f.name + ' · ' + (f.size/1024/1024).toFixed(1) + ' MB'));
       lista.appendChild(li);
     }
   }
@@ -44,6 +95,6 @@
   ['dragenter','dragover'].forEach(e => zona.addEventListener(e, ev => {ev.preventDefault(); zona.classList.add('sobre');}));
   ['dragleave','drop'].forEach(e => zona.addEventListener(e, ev => {ev.preventDefault(); zona.classList.remove('sobre');}));
   zona.addEventListener('drop', ev => { input.files = ev.dataTransfer.files; mostrar(); });
-  form.addEventListener('submit', () => { boton.disabled = true; boton.textContent = 'Generando… puede demorar unos segundos'; });
+  form.addEventListener('submit', () => { boton.disabled = true; document.getElementById('texto-boton').textContent = 'Generando anexos…'; });
 </script>
 {% endblock %}

@@ -9,7 +9,7 @@ y descarga los anexos, sin depender de nadie para generarlos.
 1. Recibe una o varias bajadas `.xlsx` (hoja `ag-grid`, columnas `Fecha`, `Faja1`, `Faja2`).
 2. Genera un anexo por cada día con producción UE (series `FE` / `FF`; las `FC` se excluyen),
    con las mismas reglas y el mismo formato de la plantilla oficial.
-3. Entrega: ZIP completo, PDF cronológico (una página por día) y cada Excel/PDF por separado.
+3. Entrega cada anexo como Excel (editable e imprimible, A4 vertical) y, si hay varios días, un ZIP con todos ordenados por mes.
 4. Marca para confirmar los casos dudosos: fajas sueltas o muy alejadas del tramo principal,
    y volúmenes inusualmente altos o bajos. Los archivos idénticos se detectan y se usan una sola vez.
 
@@ -21,11 +21,11 @@ Todos los archivos están en una sola carpeta, sin subcarpetas: se pueden subir 
 
 ```
 app.py                              Aplicación Flask (rutas, acceso, descargas)
-service.py                          Lectura de bajadas, controles, generación, PDF y ZIP
+service.py                          Lectura de bajadas, controles, generación de Excel y ZIP
 generador_anexos.py                 Reglas de negocio originales (day_tramos / build_day), sin cambios
 plantilla_Fajas_UE_fixed.xlsx       Plantilla oficial con el logo SENASA corregido
 base.html, index.html, resultado.html   Interfaz
-Dockerfile, render.yaml, fonts.conf     Despliegue (LibreOffice, necesario para el PDF)
+Dockerfile, render.yaml             Despliegue en Render
 requirements.txt                    Dependencias de Python
 ```
 
@@ -50,7 +50,7 @@ Se recomienda un repositorio **privado**.
 2. Render detecta el `Dockerfile` (o usar **New → Blueprint** para tomar `render.yaml`).
 3. En **Environment**, cargar `APP_PASSWORD` con la contraseña de acceso del equipo.
    El usuario por defecto es `fajas` (se cambia con `APP_USER`).
-4. **Create Web Service**. La primera construcción tarda varios minutos (instala LibreOffice).
+4. **Create Web Service**. La primera construcción tarda un par de minutos.
 5. Compartir con el equipo el enlace `https://<nombre>.onrender.com`.
 
 Cada `git push` a `main` vuelve a desplegar automáticamente.
@@ -72,18 +72,15 @@ Cada `git push` a `main` vuelve a desplegar automáticamente.
 ## Si aparece «Internal Server Error»
 
 1. Abrir `https://<nombre>.onrender.com/diagnostico`. Indica si falta alguna carpeta o archivo
-   (por ejemplo `index.html` si la subida a GitHub quedó incompleta) y si LibreOffice está instalado.
-   Agregando `?prueba_pdf=1` prueba además la conversión a PDF y su duración.
+   (por ejemplo `index.html` si la subida a GitHub quedó incompleta).
 2. En Render, entrar al servicio y abrir **Logs**: cada error queda registrado con un código y el detalle completo
    (líneas que empiezan con `Traceback`).
-3. Verificar en GitHub que estén **todos** los archivos del listado de arriba (son 12; `.gitignore` y `.dockerignore` son opcionales). Atención a `base.html`, `index.html`, `resultado.html` y a la plantilla `.xlsx`.
+3. Verificar en GitHub que estén **todos** los archivos del listado de arriba (son 11; `.gitignore` y `.dockerignore` son opcionales). Atención a `base.html`, `index.html`, `resultado.html` y a la plantilla `.xlsx`.
 
 ## Consideraciones del plan gratuito de Render
 
 - El servicio se suspende tras un período sin uso: el primer acceso puede demorar cerca de un minuto.
-- Tiene 512 MB de memoria. La conversión a PDF con LibreOffice es lo más pesado y se ejecuta de a una
-  por vez. Si el servicio se reinicia por falta de memoria al cargar muchos días, pasar al plan **Starter**
-  o cargar menos días por vez. Los Excel se generan igual aunque falle el PDF.
+- Al generar solo Excel, la app es liviana y cabe sin problemas en los 512 MB del plan gratuito.
 - El almacenamiento es temporal: las bajadas subidas no se conservan y los resultados se eliminan solos.
 
 ## Ejecutar en una computadora (opcional)
@@ -92,8 +89,6 @@ Cada `git push` a `main` vuelve a desplegar automáticamente.
 pip install -r requirements.txt
 python app.py          # http://localhost:8000
 ```
-
-Para el PDF se necesita LibreOffice instalado (`soffice` en el PATH). Sin él, la app entrega solo los Excel.
 
 ## Mantenimiento
 

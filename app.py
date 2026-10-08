@@ -145,7 +145,7 @@ def descargar(job_id, tipo, nombre):
     job_dir = _job_dir(job_id)
     if not NOMBRE_SEGURO.match(nombre):
         abort(404)
-    carpetas = {"xlsx": "xlsx", "pdf": "pdf", "raiz": ""}
+    carpetas = {"xlsx": "xlsx", "raiz": ""}
     if tipo not in carpetas:
         abort(404)
     return send_from_directory(os.path.join(job_dir, carpetas[tipo]), nombre, as_attachment=True)
@@ -170,9 +170,8 @@ def error_no_controlado(e):
 
 @app.get("/diagnostico")
 def diagnostico():
-    """Revisa que la instalación esté completa. ?prueba_pdf=1 prueba la conversión a PDF."""
+    """Revisa que la instalación esté completa."""
     import platform
-    import shutil as sh
 
     import flask
     import openpyxl
@@ -184,7 +183,6 @@ def diagnostico():
     info = {
         "archivos": {a: os.path.exists(os.path.join(base, a)) for a in archivos},
         "plantilla_xlsx": os.path.exists(service.PLANTILLA),
-        "libreoffice": sh.which("soffice") or sh.which("libreoffice"),
         "acceso_con_clave": bool(APP_PASSWORD),
         "versiones": {"python": platform.python_version(), "flask": flask.__version__,
                       "pandas": pandas.__version__, "openpyxl": openpyxl.__version__},
@@ -198,21 +196,6 @@ def diagnostico():
     except OSError as exc:
         info["carpeta_temporal_escribible"] = f"no: {exc}"
 
-    if request.args.get("prueba_pdf"):
-        t0 = time.time()
-        carpeta = tempfile.mkdtemp(prefix="diag_")
-        try:
-            copia = os.path.join(carpeta, "plantilla.xlsx")
-            shutil.copy(service.PLANTILLA, copia)
-            error = service._convertir_pdf([copia], carpeta)
-            pdf = os.path.join(carpeta, "plantilla.pdf")
-            info["prueba_pdf"] = {
-                "ok": error is None and os.path.exists(pdf),
-                "error": error,
-                "segundos": round(time.time() - t0, 1),
-            }
-        finally:
-            shutil.rmtree(carpeta, ignore_errors=True)
     return info
 
 
