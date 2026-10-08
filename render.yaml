@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: fajas-ue
+    runtime: docker
+    plan: free            # si LibreOffice se queda sin memoria, pasar a "starter"
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: APP_PASSWORD  # contraseña de acceso (cargar a mano en Render)
+        sync: false
+      - key: APP_USER
+        value: fajas
