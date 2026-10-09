@@ -8,6 +8,7 @@ control y empaquetado.
 """
 
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -29,6 +30,9 @@ VOLUMEN_BAJO = int(os.environ.get("VOLUMEN_BAJO", "600"))    # fajas/día
 TRAMO_CHICO = int(os.environ.get("TRAMO_CHICO", "5"))        # fajas en un tramo "suelto"
 DISTANCIA_LEJANA = int(os.environ.get("DISTANCIA_LEJANA", "10000"))
 MAX_DIAS = int(os.environ.get("MAX_DIAS", "62"))
+
+# Sin Pillow, openpyxl descarta el logo de SENASA al abrir la plantilla
+PILLOW_OK = importlib.util.find_spec("PIL") is not None
 
 
 class BajadaError(Exception):
@@ -181,7 +185,10 @@ def generar(df, dias, job_dir):
 
     meta = {
         "dias": _serializable(dias),
-        "avisos": [],
+        "avisos": [] if PILLOW_OK else [
+            "Atención: falta la librería Pillow en el servidor y los anexos salen SIN el logo de SENASA. "
+            "Avise al administrador antes de imprimir."
+        ],
         "zip": zip_nombre,
         "total_util": sum(d["util"] for d in dias),
     }
