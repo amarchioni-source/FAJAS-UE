@@ -183,6 +183,8 @@ def diagnostico():
     info = {
         "archivos": {a: os.path.exists(os.path.join(base, a)) for a in archivos},
         "plantilla_xlsx": os.path.exists(service.PLANTILLA),
+        "pillow_instalado": service.PILLOW_OK,
+        "logo_en_plantilla": len(openpyxl.load_workbook(service.PLANTILLA).active._images) == 1,
         "acceso_con_clave": bool(APP_PASSWORD),
         "versiones": {"python": platform.python_version(), "flask": flask.__version__,
                       "pandas": pandas.__version__, "openpyxl": openpyxl.__version__},
